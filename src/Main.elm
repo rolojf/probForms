@@ -1,39 +1,57 @@
 module Main exposing (main)
 
+import Browser
 import Css.Global
-import Html.Styled as HtmlS exposing (div, text)
+import Form
+import Form.Field as Field
+import Form.FieldView as FieldView
+import Form.Validation as Validation
 import Html exposing (Html)
+import Html.Styled as HtmlS exposing (div, text)
 import Html.Styled.Attributes as AttrS exposing (css)
 import Tailwind.Breakpoints as TWBp
 import Tailwind.Theme as Theme
 import Tailwind.Utilities as Tw exposing (globalStyles)
-import Browser
 
-type Model =
-    Nada
+
+type alias Model =
+    { formModel : Form.Model
+    , submitting : Bool
+    }
 
 
 init : () -> ( Model, Cmd Msg )
-init _ = (Nada, Cmd.none)
+init _ =
+    ( { formModel = Form.init
+      , submitting = False
+      }
+    , Cmd.none
+    )
 
 
-subscriptions :  Model -> Sub Msg
+subscriptions : Model -> Sub Msg
 subscriptions modelo =
     Sub.none
 
-type Msg =
-    SinAviso
 
-update :  Msg -> Model -> ( Model, Cmd Msg )
-update mensaje _ = (Nada, Cmd.none)
+type Msg
+    = SinAviso
+    | FormMsg (Form.Msg Msg)
 
 
-main = Browser.element
-    { init = init
-    , view = view
-    , update = update
-    , subscriptions = subscriptions
-    }
+update : Msg -> Model -> ( Model, Cmd Msg )
+update _ modelo =
+    ( modelo, Cmd.none )
+
+
+main =
+    Browser.element
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
+
 
 view : Model -> Html Msg
 view modelo =
@@ -49,4 +67,5 @@ view modelo =
                 ]
             ]
             [ text "This page is just static HTML, rendered by Elm." ]
-        ]          |> HtmlS.toUnstyled
+        ]
+        |> HtmlS.toUnstyled
