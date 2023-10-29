@@ -35,13 +35,29 @@ subscriptions modelo =
 
 
 type Msg
-    = SinAviso
-    | FormMsg (Form.Msg Msg)
+    = FormMsg (Form.Msg Msg)
+    | OnSubmitForma (Form.Validated String MiForma)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update _ modelo =
-    ( modelo, Cmd.none )
+update mensaje model =
+     case mensaje of
+        OnSubmitForma { parsed } ->
+            case parsed of
+                Form.Valid signUpData ->
+                    ( { model | submitting = True }
+                    , Debug.log "sendSignUpData" signUpData )
+                Form.Invalid _ _ ->
+                    -- validation errors are displayed already so
+                    -- we don't need to do anything else here
+                    ( model, Cmd.none )
+        FormMsg formMsg ->
+            let
+                ( updatedFormModel, cmd ) =
+                    Form.update formMsg model.formModel
+            in
+            ( { model | formModel = updatedFormModel }, cmd )
+
 
 
 main =
@@ -51,6 +67,51 @@ main =
         , update = update
         , subscriptions = subscriptions
         }
+
+
+type alias MiForma =
+    { nombre : String }
+
+formView : Model -> HtmlS.Html Msg
+formView model =
+    laForma
+        |> Form.renderStyledHtml
+        { submitting = model.submitting
+        , state = model.formModel
+        , toMsg = FormMsg
+        }
+        (Form.options "form"
+            |> Form.withOnSubmit OnSubmitForma
+        )
+        []
+
+
+
+laForma : Form.StyledHtmlForm String MiForma input Msg
+laForma =
+    (\nombre ->
+        { combine =
+            -- Validation error parsed Never Never
+            Validation.succeed
+                (\nombreDado -> { nombre = nombreDado })
+        , view =
+            -- Context error input -> List (Html msg)
+            \formState ->
+                let
+                    fieldView label field =
+                        Html.div []
+                            [ Html.label []
+                                [ Html.text (label ++ " ")
+                                , FieldView.input [] field
+                                -- , errorsView formState field
+                                ]
+                            ]
+                in
+                [ fieldView "NOMBRE" nombre ]
+        }
+    )
+        |> Form.form
+        |> Form.field "nombre" (Field.text |> Field.required "Requerido")
 
 
 view : Model -> Html Msg
