@@ -36,21 +36,12 @@ subscriptions modelo =
 
 type Msg
     = FormMsg (Form.Msg Msg)
-    | OnSubmitForma (Form.Validated String MiForma)
+    | OnSubmitForma (Form.Validated String String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update mensaje model =
-     case mensaje of
-        OnSubmitForma { parsed } ->
-            case parsed of
-                Form.Valid signUpData ->
-                    ( { model | submitting = True }
-                    , Debug.log "sendSignUpData" signUpData )
-                Form.Invalid _ _ ->
-                    -- validation errors are displayed already so
-                    -- we don't need to do anything else here
-                    ( model, Cmd.none )
+    case mensaje of
         FormMsg formMsg ->
             let
                 ( updatedFormModel, cmd ) =
@@ -58,6 +49,25 @@ update mensaje model =
             in
             ( { model | formModel = updatedFormModel }, cmd )
 
+        OnSubmitForma resultaLaForma ->
+            case resultaLaForma of
+                Form.Valid signUpData ->
+                    let
+                        _ =
+                            Debug.log "Valid sendSignUpData" signUpData
+                    in
+                    ( { model | submitting = True }
+                    , Cmd.none
+                    )
+
+                Form.Invalid _ xyz ->
+                    let
+                        _ =
+                            Debug.log "Invalid sendSignUpData" xyz
+                    in
+                    -- validation errors are displayed already so
+                    -- we don't need to do anything else here
+                    ( model, Cmd.none )
 
 
 main =
@@ -72,46 +82,82 @@ main =
 type alias MiForma =
     { nombre : String }
 
+
 formView : Model -> HtmlS.Html Msg
 formView model =
     laForma
         |> Form.renderStyledHtml
-        { submitting = model.submitting
-        , state = model.formModel
-        , toMsg = FormMsg
-        }
-        (Form.options "form"
-            |> Form.withOnSubmit OnSubmitForma
-        )
-        []
+            { submitting = model.submitting
+            , state = model.formModel
+            , toMsg = FormMsg
+            }
+            (Form.options "Forma"
+                |> Form.withOnSubmit (\{ parsed } -> OnSubmitForma parsed)
+            )
+            []
 
 
 
-laForma : Form.StyledHtmlForm String MiForma input Msg
+--laForma : Form.StyledHtmlForm String String input Msg
+
+
 laForma =
-    (\nombre ->
-        { combine =
+    Form.form
+        (\nombre ->
+            { combine = Validation.succeed (\valorCaptado  -> valorCaptado )
+            |> Validation.andMap nombre
+
             -- Validation error parsed Never Never
-            Validation.succeed
-                (\nombreDado -> { nombre = nombreDado })
-        , view =
+            , view =
+                \contexto -> verCampo "NOMBRE" nombre contexto
+
             -- Context error input -> List (Html msg)
-            \formState ->
-                let
-                    fieldView label field =
-                        Html.div []
-                            [ Html.label []
-                                [ Html.text (label ++ " ")
-                                , FieldView.input [] field
-                                -- , errorsView formState field
-                                ]
-                            ]
-                in
-                [ fieldView "NOMBRE" nombre ]
-        }
-    )
-        |> Form.form
-        |> Form.field "nombre" (Field.text |> Field.required "Requerido")
+            }
+        )
+        |> Form.field "nombre"
+            (Field.text |> Field.required "Requerido")
+
+
+verCampo :
+    String
+    -> Validation.Field String String FieldView.Input
+    -> Form.Context String input
+    -> List (HtmlS.Html msg)
+verCampo label queCampo contexto =
+    div []
+        [ HtmlS.label []
+            [ text (label ++ " ")
+
+            -- List (Html.Styled.Attribute msg) -> Form.Validation.Field error parsed Input  -> Html.Styled.Html msg
+            , FieldView.inputStyled [] queCampo
+            , errorsView contexto queCampo
+            ]
+        ]
+        |> List.singleton
+
+
+errorsView :
+    Form.Context String input
+    -> Validation.Field String parsed kind
+    -> HtmlS.Html msg
+errorsView { submitAttempted, errors } field =
+    if submitAttempted || Validation.statusAtLeast Validation.Blurred field then
+        -- only show validations when a field has been blurred
+        -- (it can be annoying to see errors while you type the initial entry for a field, but we want to see the current
+        -- errors once we've left the field, even if we are changing it so we know once it's been fixed or whether a new
+        -- error is introduced)
+        errors
+            |> Form.errorsForField field
+            |> List.map
+                (\error ->
+                    HtmlS.li
+                        [ AttrS.style "color" "red" ]
+                        [ text error ]
+                )
+            |> HtmlS.ul []
+
+    else
+        HtmlS.ul [] []
 
 
 view : Model -> Html Msg
@@ -127,6 +173,8 @@ view modelo =
                 , Tw.p_1
                 ]
             ]
-            [ text "This page is just static HTML, rendered by Elm." ]
+            [ text "This page is just static HTML, rendered by Elm."
+            , formView modelo
+            ]
         ]
         |> HtmlS.toUnstyled
