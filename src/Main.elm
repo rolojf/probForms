@@ -83,29 +83,13 @@ type alias MiForma =
     { nombre : String }
 
 
-formView : Model -> HtmlS.Html Msg
-formView model =
-    laForma
-        |> Form.renderStyledHtml
-            { submitting = model.submitting
-            , state = model.formModel
-            , toMsg = FormMsg
-            }
-            (Form.options "Forma"
-                |> Form.withOnSubmit (\{ parsed } -> OnSubmitForma parsed)
-            )
-            []
-
-
-
---laForma : Form.StyledHtmlForm String String input Msg
-
-
+laForma : Form.StyledHtmlForm String String input Msg
 laForma =
     Form.form
         (\nombre ->
-            { combine = Validation.succeed (\valorCaptado  -> valorCaptado )
-            |> Validation.andMap nombre
+            { combine =
+                Validation.succeed (\valorCaptado -> valorCaptado)
+                    |> Validation.andMap nombre
 
             -- Validation error parsed Never Never
             , view =
@@ -129,7 +113,7 @@ verCampo label queCampo contexto =
             [ text (label ++ " ")
 
             -- List (Html.Styled.Attribute msg) -> Form.Validation.Field error parsed Input  -> Html.Styled.Html msg
-            , FieldView.inputStyled [] queCampo
+            , FieldView.inputStyled [ css [ Tw.form_input, Tw.my_4 ] ] queCampo
             , errorsView contexto queCampo
             ]
         ]
@@ -158,6 +142,20 @@ errorsView { submitAttempted, errors } field =
 
     else
         HtmlS.ul [] []
+
+
+formView : Model -> HtmlS.Html Msg
+formView model =
+    laForma
+        |> Form.renderStyledHtml
+            { submitting = model.submitting
+            , state = model.formModel
+            , toMsg = FormMsg
+            }
+            (Form.options "Forma"
+                |> Form.withOnSubmit (\{ parsed } -> OnSubmitForma parsed)
+            )
+            []
 
 
 view : Model -> Html Msg
