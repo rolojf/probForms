@@ -1,0 +1,68 @@
+* Para que quiero aprender  fomularios con el paquete de dillon kearns elm-forms
+Porque ya está incorporado con elm-pages y para aprovechar que ya trabajo esa herramienta me falta el tema de formularios.
+Toda interactividad con el usuario requiere formularios.  Cualquier proyecto que quiera hacer va a ocupar formularios cuando haya valor de interactuar con el usuario.
+
+* ~Form.model~.
+En el modelo metemos
+
+#+begin_src elm
+       type alias Model =
+             Dict String FormState -- es el FormState de la forma, porque puede haber muchas formas
+
+       type alias FormState =   -- para cada forma obtenemos
+          { fields : Dict String FieldState  -- los campos en forma de un DIc con los campos y su FieldState
+          , submitAttempted : Bool -- y registro si se intentó mandar o no
+          }
+
+      type alias FieldState =
+          { value : String
+          , status : FieldStatus
+          }
+
+          type FieldStatus
+          = NotVisited
+          | Focused
+          | Changed
+          | Blurred
+#+end_src
+
+
+
+* Wiring para definir un formulario
+1. Tenemos que definir un /record/ con los campos y su tipo esperado.  A este registro le conocen como el /parseado/.
+2. Luego una función del formulario, que es una función lamda que recibe el nombre de cada campo y regresa un registro con dos partes: conbine & view y luego más rollo.
+*** combine
+
+*** view
+lo definimos con una función que recibe automáticamente el contexto que es:
+     #+begin_src elm
+       type alias Context error input =
+             { errors : Errors error
+             , submitting : Bool
+             , submitAttempted : Bool
+             , input : input
+             }
+     #+end_src
+y entrega instrucciones de como hay que mostrar los campos en List Html msg
+
+* Que se tiene que hacer para mostrar un formulario
+1. Creado el formulario con ~Form.form~ para mostrar el formulario, mostramos los campos según lo que definimos en  la función ~combine and view~.
+2. Creamos un función para mostrar el formulario usando ~Form.renderHtml~
+3. Incorporar en lista de Html la función que muestra el formulario
+
+* Ejercicios para ir dominando el tema
+- [ ]  Entender como se actualiza un registro con valores que salgan del formulario (parsed
+- [ ] Mostrar error si se captura una plabra x
+- [ ] Capturar en mayúsculas el valor llenado en el formulario
+- [ ] Agregar otro campo input
+- [ ] Cómo poner un formulario con dropDown
+- [ ] Agregar un campo textArea
+- [ ] Agregar un campo radio
+- [ ] Validar que haga algo en OnSummit
+- [ ] Que solo puedan capturar números
+- [ ] Orilla roja con error
+- [ ] Cómo mostrar el dato de error
+- [ ] Revisar con lamdera si jalan los formulario
+
+
+  Al final poder usar este framework para modificar el formulario de mi página.
